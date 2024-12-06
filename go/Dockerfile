@@ -4,13 +4,19 @@ WORKDIR /go-build
 
 COPY go.mod go.sum ./
 
-RUN go mod download
+RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
+    go mod download
 
 COPY . .
 
-RUN go build -o app ./cmd/app
+RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
+    --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
+    go build -o app ./cmd/app
 
 FROM alpine:3.20
+
+# hadolint ignore=DL3018
+RUN apk --no-cache add ca-certificates
 
 ARG USER=app
 ARG UID=1000
